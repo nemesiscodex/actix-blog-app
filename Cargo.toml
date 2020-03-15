@@ -9,8 +9,9 @@ edition = "2018"
 [dependencies]
 actix-rt = "1.0.0"
 actix-web = "2.0.0"
+actix-cors = "0.2.0"
 serde = { version = "1.0.104", features = ["derive"] }
-uuid = { version = "0.8.1", features = ["serde"] }
+uuid = { version = "0.8.1", features = ["serde", "v4"] }
 chrono = { version = "0.4.11", features = ["serde"] }
 dotenv = "0.15.0"
 config = "0.10.1"
@@ -24,6 +25,8 @@ slog-async = "2.4.0"
 slog-envlogger = "2.2.0"
 slog-scope = "4.3.0"
 slog-stdlog = "4.0.0"
+futures = "0.3.4"
+juniper = { git = "https://github.com/graphql-rust/juniper.git" }
 
 
 [dev-dependencies]

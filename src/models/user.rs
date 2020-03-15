@@ -5,13 +5,15 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use tokio_pg_mapper_derive::PostgresMapper;
+use juniper::GraphQLObject;
 
-#[derive(Clone, Serialize, Deserialize, PostgresMapper)]
+#[derive(Clone, Serialize, Deserialize, PostgresMapper, GraphQLObject)]
 #[pg_mapper(table = "users")]
 pub struct User {
     pub id: Uuid,
     pub username: String,
     pub email: String,
+    #[graphql(skip)]
     pub password: String,
     pub bio: Option<String>,
     pub image: Option<String>,
