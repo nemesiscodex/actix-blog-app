@@ -28,9 +28,9 @@ async fn test_health() {
 
     let mut app = test::init_service(app).await;
 
-    let req = test::TestRequest::get().uri("/health").to_request();
+    let req = test::TestRequest::get().uri("/").to_request();
 
     let res = test::call_service(&mut app, req).await;
 
-    assert_eq!(res.status(), 200, "GET /health should return 200");
+    assert_eq!(res.status(), 200, "GET / should return 200");
 }

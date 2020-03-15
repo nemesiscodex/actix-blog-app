@@ -6,5 +6,5 @@ async fn health() -> HttpResponse {
 
 pub fn app_config(config: &mut web::ServiceConfig) {
     config
-        .service(web::resource("/health").route(web::get().to(health)));
+        .service(web::resource("/").route(web::get().to(health)));
 }

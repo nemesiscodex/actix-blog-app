@@ -12,6 +12,7 @@ use tokio_postgres::NoTls;
 pub struct ServerConfig {
     pub host: String,
     pub port: i32,
+    pub url: String,
 }
 
 #[derive(Deserialize)]

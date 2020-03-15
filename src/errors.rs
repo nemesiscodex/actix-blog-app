@@ -67,7 +67,7 @@ impl From<tokio_pg_mapper::Error> for AppError {
 
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "{:?}", self)
+        write!(f, "{}", self.message())
     }
 }
 
