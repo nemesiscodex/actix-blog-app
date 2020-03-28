@@ -14,6 +14,7 @@ async fn main() -> std::io::Result<()> {
     let config = Config::from_env().unwrap();
 
     let pool = config.configure_pool();
+    let hashing = config.hashing_service();
 
     let host = config.server.host;
     let port = config.server.port;
@@ -34,6 +35,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .wrap(middleware::Logger::default())
+            .data(hashing.clone())
             .data(pool.clone())
             .configure(app_config)
     })

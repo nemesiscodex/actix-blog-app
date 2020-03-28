@@ -25,8 +25,9 @@ slog-async = "2.4.0"
 slog-envlogger = "2.2.0"
 slog-scope = "4.3.0"
 slog-stdlog = "4.0.0"
-futures = "0.3.4"
+futures = { version = "0.3.4", features = ["compat"] }
 juniper = { git = "https://github.com/graphql-rust/juniper.git" }
+argonautica = { version = "0.2", features = ["simd"] }
 
 
 [dev-dependencies]
