@@ -2,6 +2,7 @@ mod config;
 mod errors;
 mod handlers;
 mod models;
+mod repositories;
 
 use crate::config::Config;
 use crate::handlers::app_config;
