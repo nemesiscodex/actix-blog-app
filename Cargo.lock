@@ -8,8 +8,10 @@ dependencies = [
  "actix-rt",
  "actix-web",
  "argonautica",
+ "async-trait",
  "chrono",
  "config",
+ "dataloader",
  "deadpool-postgres",
  "dotenv",
  "futures 0.3.4",
@@ -374,9 +376,9 @@ checksum = "cff77d8686867eceff3105329d4698d96c2391c176d5d03adc90c7389162b5b8"
 
 [[package]]
 name = "async-trait"
-version = "0.1.24"
+version = "0.1.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "750b1c38a1dfadd108da0f01c08f4cdc7ff1bb39b325f9c82cc972361780a6e1"
+checksum = "da71fef07bc806586090247e971229289f64c210a278ee5ae419314eb386b31d"
 dependencies = [
  "proc-macro2 1.0.9",
  "quote 1.0.3",
@@ -797,6 +799,16 @@ checksum = "4434400df11d95d556bac068ddfedd482915eb18fe8bea89bc80b6e4b1c179e5"
 dependencies = [
  "generic-array 0.12.3",
  "subtle",
+]
+
+[[package]]
+name = "dataloader"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69042f5521ffb051d02f25058c99a0d534f4be572ba4e6149407589a193888dd"
+dependencies = [
+ "async-trait",
+ "tokio",
 ]
 
 [[package]]

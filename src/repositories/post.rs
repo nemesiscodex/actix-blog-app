@@ -1,14 +1,28 @@
 use deadpool_postgres::{Pool, Client};
-use std::sync::Arc;
-use slog_scope::error;
+use std::{collections::HashMap, sync::Arc};
+use slog_scope::{error, info};
 use crate::models::post::{Post, CreatePost};
 use tokio_pg_mapper::FromTokioPostgresRow;
 use crate::errors::{AppError, AppErrorType};
 use tokio_postgres::error::{Error, SqlState};
 use uuid::Uuid;
+use async_trait::async_trait;
+use dataloader::{BatchFn, cached::Loader};
 
 pub struct PostRepository {
-    pool: Arc<Pool>
+    pool: Arc<Pool>,
+}
+
+pub struct PostBatcher {
+    pool: Arc<Pool>,
+}
+
+pub type PostLoader = Loader<Uuid, Vec<Post>, AppError, PostBatcher>;
+
+pub fn get_post_loader(pool: Arc<Pool>) -> PostLoader {
+    Loader::new(PostBatcher { pool })
+        // https://github.com/cksac/dataloader-rs/issues/12
+        .with_yield_count(100)
 }
 
 impl PostRepository {
@@ -75,6 +89,36 @@ impl PostRepository {
         Ok(users)
     }
 
+    #[allow(dead_code)]
+    pub async fn get_for_user(&self, user_id: Uuid) -> Result<Vec<Post>, AppError> {
+        let client: Client = self.pool
+            .get()
+            .await
+            .map_err(|err| {
+                error!("Error getting client {}", err; "query" => "get_for_user");
+                err
+            })?;
+
+        let statement = client.prepare("select * from posts where author_id = $1").await?;
+
+        let users = client
+            .query(&statement, &[&user_id])
+            .await
+            .map_err(|err| {
+                error!("Error getting users. {}", err; "query" => "get_for_user");
+                err
+            })?
+            .iter()
+            .map(|row| Post::from_row_ref(row))
+            .collect::<Result<Vec<Post>, _>>()
+            .map_err(|err| {
+                error!("Error getting parsing users. {}", err; "query" => "get_for_user");
+                err
+            })?;
+
+        Ok(users)
+    }
+
     pub async fn create(&self, input: CreatePost) -> Result<Post, AppError> {
         let client: Client = self.pool
             .get()
@@ -130,5 +174,74 @@ impl PostRepository {
             })?;
 
         Ok(post)
+    }
+}
+
+impl PostBatcher {
+    pub async fn get_posts_by_user_ids(&self, hashmap: &mut HashMap<Uuid, Vec<Post>>, ids: Vec<Uuid>) -> Result<(), AppError> {
+        let client: Client = self.pool
+            .get()
+            .await
+            .map_err(|err| {
+                error!("Error getting client {}", err; "query" => "get_posts_by_user_ids");
+                err
+            })?;
+
+        let statement = client.prepare("select * from posts where author_id = ANY($1)").await?; 
+
+        client
+            .query(&statement, &[&ids])
+            .await
+            .map_err(|err| {
+                error!("Error getting posts. {}", err; "query" => "get_posts_by_user_ids");
+                err
+            })?
+            .iter()
+            .map(|row| Post::from_row_ref(row))
+            .collect::<Result<Vec<Post>, _>>()
+            .map_err(|err| {
+                error!("Error getting parsing posts. {}", err; "query" => "get_posts_by_user_ids");
+                err
+            })?
+            .iter()
+            .fold(
+                hashmap,
+                |map: &mut HashMap<Uuid, Vec<Post>>, post: &Post| {
+                    let vec = map
+                        .entry(post.author_id)
+                        .or_insert_with(|| Vec::<Post>::new());
+                    vec.push(post.clone());
+                    map
+                }
+            );
+
+        Ok(())
+
+    }
+}
+
+#[async_trait]
+impl BatchFn<Uuid, Vec<Post>> for PostBatcher {
+    type Error = AppError;
+
+    async fn load(&self, keys: &[Uuid]) -> HashMap<Uuid, Result<Vec<Post>, AppError>> {
+
+        info!("Loading batch {:?}", keys);
+
+        let mut posts_map = HashMap::new();
+
+        let result: Result<(), AppError> = self.get_posts_by_user_ids(&mut posts_map, keys.into()).await;
+
+        keys
+            .iter()
+            .map(move |id| {
+                let entry = 
+                    posts_map.entry(*id)
+                        .or_insert_with(|| vec![])
+                        .clone();
+
+                    (id.clone(), result.clone().map(|_| entry))
+                })
+                .collect::<HashMap<_, _>>()
     }
 }
